@@ -1,0 +1,16 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "removeComments": true,
+    "target": "es2017",
+    "module": "commonjs",
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "paths": {
+      "*": [
+        "*",
+        "dist/*"
+      ]
+    }
+  }
+}
