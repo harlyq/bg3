@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      #backgroundImageBadern {
+        display: block;
+        width: 200px;
+        height: 200px;
+        background: url(thurnandtaxis.svg#salzburg);
+        background-size: contain;
+      }
+
+      #backgroundImageTopLeftPart {
+        display: block;
+        width: 200px;
+        height: 200px;
+        background: url(thurnandtaxis.svg#topLeftPart);
+        background-size: contain;
+      }
+
+      body {
+        color: green; // replaces "currentColor" in any of the svg elements, even linked from different files
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Img element</h1>
+    <img src="thurnandtaxis.svg#salzburg">
+    <h1>Background Image element</h1>
+    <div id="backgroundImageBadern"></div>
+    <h1>Object type element</h1>
+    <object type="image/svg+xml" data="thurnandtaxis.svg#salzburg" class="logo"></object>
+    <h1>svg link element</h1>
+    <svg id="svgElement">
+      <use id="s01" xlink:href="thurnandtaxis.svg#salzburg"></use>
+    </svg>
+    <h1>Img view</h1>
+    <img src="thurnandtaxis.svg#topLeftPart">
+    <h1>Background Image view</h1>
+    <div id="backgroundImageTopLeftPart"></div>
+    <h1>Object type view</h1>
+    <object type="image/svg+xml" data="thurnandtaxis.svg#topLeftPart" class="logo"></object>
+    <h1>svg link view</h1>
+    <svg id="svgView">
+      <use xlink:href="thurnandtaxis.svg#topLeftPart"></use>
+    </svg>
+    <script>
+      let a = {"this.x#ID1": 10}
+      console.log(a)
+      fetch("thurnandtaxis.svg").then(response => response.text()).then(text => {
+        let div = document.createElement("div")
+        div.innerHTML = text
+        document.body.appendChild(div) // element must be added for getBBox() to work
+        let id = div.querySelector("#bonusD")
+        console.log(id.getBBox())
+        document.body.removeChild(div)
+      })
+    </script>
+  </body>
+</html>
