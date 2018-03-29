@@ -25,9 +25,17 @@ export default class Game {
   locations: {[name: string]: LocationInfo} = {}
   players: {[name: string]: PlayerInfo} = {}
 
+  static SEPARATOR = '-'
+
   private pickList: GamePick[] = []
   private pickPending: {[player: string]: GamePick[]} = {} // the pickLists, indexed by player
   private pickPromises: Promise<string[]>[] = [] // one promise per player mentioned in the pickLists
+
+  // the name minus the '-xx' postfix
+  public getShortName(card: string): string {
+    let separatorIndex = card.lastIndexOf(Game.SEPARATOR)
+    return separatorIndex > 0 ? card.substring(0, separatorIndex) : card
+  }
 
   public createCard(name: string, data = {}, count = 1): string[] {
     console.assert(typeof this.cards[name] === 'undefined', `card '${name}' already present in card list`)
@@ -40,7 +48,7 @@ export default class Game {
       createdCards.push(name)
     } else {
       for (let i = 1; i <= count; ++i) {
-        let uniqueName = name + '-' + i
+        let uniqueName = name + Game.SEPARATOR + i
         this.cards[uniqueName] = {data}
         createdCards.push(uniqueName)
       }
@@ -75,17 +83,43 @@ export default class Game {
   }
 
 
-  // add new cards to a location, asserts if a card is already in a different location
-  public addCards(cards: string[], location: string) {
-    let locationInfo = this.locations[location]
-    console.assert(typeof locationInfo !== 'undefined', `unable to find location '${location}', must call createLocation() with this location before using addCards()`)
-    console.assert(Helper.unique(cards).length === cards.length, `duplicate cards listed in '${cards}'`)
-    for (let c of cards) {
-      let cardData = this.cards[c]
-      console.assert(!cardData.location, `card ${c} is already at location ${cardData.location}`)
-      cardData.location = location
+  // name supports wildcards * and ?
+  private static STAR_REGX = /\*/g
+  private static QUESTION_REGX = /\?/g
+  public getCardsByName(name: string): string[] {
+    let nameX = name.replace(Game.STAR_REGX, '.*')
+    nameX = nameX.replace(Game.QUESTION_REGX, '.')
+    let nameRegx = new RegExp('^' + nameX + '$')
+    let cardsByName = []
+
+    for (let card in this.cards) {
+      if (nameRegx.test(card)) {
+        cardsByName.push(card)
+      }
     }
-    locationInfo.cards.push(...cards)
+    return cardsByName
+  }
+
+  // add new cards to a location, asserts if a card is already in a different location
+  public addCards(cards: string | string[], location: string, count: number = -1) {
+    let cardList: string[] = typeof cards === 'string' ? this.getCardsByName(cards): cards
+
+    let locationInfo = this.locations[location]
+    console.assert(cardList.length > 0, `there are no cards in '${cards}'`)
+    console.assert(typeof locationInfo !== 'undefined', `unable to find location '${location}', must call createLocation() with this location before using addCards()`)
+    console.assert(Helper.unique(cardList).length === cards.length, `duplicate cards listed in '${cardList}'`)
+
+    if (count >= 0) {
+      cardList = cardList.slice(0,count)
+    }
+
+    for (let c of cardList) {
+      let cardData = this.cards[c]
+      console.assert(typeof cardData !== 'undefined', `unable to find card '${c}'`)
+      console.assert(!cardData.location, `card '${c}' is already at location '${cardData.location}'`)
+      cardData.location = location
+      locationInfo.cards.push(c)
+    }
   }
 
 
@@ -171,7 +205,10 @@ export default class Game {
   }
 
 
-  public moveCards(cards: string[], to: string, count: number = -1 /*all*/, toIndex: number = -1 /*end*/): string[] {
+  public moveCards(cards: string | string[], to: string, count: number = -1 /*all*/, toIndex: number = -1 /*end*/): string[] {
+    let cardList: string[] = typeof cards === 'string' ? this.getCardsByName(cards): cards
+    console.assert(cardList.length > 0, `there are no cards listed in '${cards}'`)
+
     let toLocation = this.locations[to]
     console.assert(typeof toLocation !== 'undefined', `unable to find to location '${to}'`)
 
